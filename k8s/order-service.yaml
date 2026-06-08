@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: order-service
-        image: AWS_ACCOUNT_ID.dkr.ecr.AWS_REGION.amazonaws.com/toy-order-service:latest
+        image: 589077667788.dkr.ecr.us-east-1.amazonaws.com/toy-order-service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8080

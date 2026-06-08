@@ -1,8 +1,10 @@
 package com.toy.orderservice.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,6 +14,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/orders")
 public class OrderController {
+
+    @Autowired
+    private KafkaTemplate<String, Object> kafkaTemplate;
 
     @PostMapping
     public ResponseEntity<?> createOrder(@RequestBody Map<String, Object> orderPayload) {
@@ -28,8 +33,11 @@ public class OrderController {
 
         String contextRole = SecurityContextHolder.getContext().getAuthentication().getAuthorities().toString();
 
+        // Phase 2: Stream order data packet asynchronously over Confluent Kafka Pipeline
+        kafkaTemplate.send("toy-orders", orderPayload);
+
         return ResponseEntity.ok(Map.of(
-            "status", "ORDER_PROCESSED_SIMULATION",
+            "status", "ORDER_PROCESSED_AND_STREAMED",
             "receivedItem", orderPayload.get("item"),
             "evaluatedRoleContext", contextRole
         ));

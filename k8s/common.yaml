@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: toy-apps
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: toy-cluster-secrets
+  namespace: toy-apps
+type: Opaque
+stringData:
+  # Your live cloud database string
+  MONGODB_URI: "mongodb+srv://knommoc38_db_user:9IxEgVX60ijqHwec@toy-spring-architecture.bpvfjy9.mongodb.net/?appName=toy-spring-architecture-mongodb"
+
+  # Your live cloud Confluent Kafka configurations
+  KAFKA_BOOTSTRAP_SERVERS: "pkc-oxqxx9.us-east-1.aws.confluent.cloud:9092"
+  KAFKA_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.plain.PlainLoginModule required username='ZFDAEEW4XKFUH663' password='cflt+DWoWP5+vLTus2zWFCJuCxAPciDi49SsZ4WS9CvNLdIIa7t9Z75yjkTSym/w';"

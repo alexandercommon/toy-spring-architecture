@@ -5,6 +5,8 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  ORDER_SERVICE_REPO: toy-order-service
+  BID_SERVICE_REPO: toy-bid-service
 
 jobs:
   build:
@@ -21,3 +23,37 @@ jobs:
 
     - name: Build with Maven
       run: mvn clean package -DskipTests
+
+    # Phase 4: Authenticate securely against AWS Cloud infrastructure
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    # Automatically provision the ECR destination catalogs if they don't exist yet
+    - name: Ensure AWS ECR Repositories Exist
+      run: |
+        aws ecr create-repository --repository-name $ORDER_SERVICE_REPO --image-scanning-configuration scanOnPush=true || echo "Repository $ORDER_SERVICE_REPO already exists."
+        aws ecr create-repository --repository-name $BID_SERVICE_REPO --image-scanning-configuration scanOnPush=true || echo "Repository $BID_SERVICE_REPO already exists."
+
+    - name: Log in to AWS ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    # Compile, Tag, and Push the Producer Image to AWS ECR Catalog
+    - name: Build, Tag, and Push Order Service to AWS ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      run: |
+        docker build -t $ECR_REGISTRY/$ORDER_SERVICE_REPO:latest -f order-service/Dockerfile .
+        docker push $ECR_REGISTRY/$ORDER_SERVICE_REPO:latest
+
+    # Compile, Tag, and Push the Consumer Image to AWS ECR Catalog
+    - name: Build, Tag, and Push Bid Service to AWS ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      run: |
+        docker build -t $ECR_REGISTRY/$BID_SERVICE_REPO:latest -f bid-service/Dockerfile .
+        docker push $ECR_REGISTRY/$BID_SERVICE_REPO:latest

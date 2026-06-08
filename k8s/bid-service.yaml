@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bid-service
+  namespace: toy-apps
+  labels:
+    app: bid-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bid-service
+  template:
+    metadata:
+      labels:
+        app: bid-service
+    spec:
+      containers:
+      - name: bid-service
+        image: AWS_ACCOUNT_ID.dkr.ecr.AWS_REGION.amazonaws.com/toy-bid-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8082
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          valueFrom:
+            secretKeyRef:
+              name: toy-cluster-secrets
+              key: KAFKA_BOOTSTRAP_SERVERS
+        - name: KAFKA_SASL_JAAS_CONFIG
+          valueFrom:
+            secretKeyRef:
+              name: toy-cluster-secrets
+              key: KAFKA_SASL_JAAS_CONFIG
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: toy-cluster-secrets
+              key: MONGODB_URI
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bid-service
+  namespace: toy-apps
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 8082
+    targetPort: 8082
+    protocol: TCP
+  selector:
+    app: bid-service
